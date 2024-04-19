@@ -30,6 +30,10 @@ app.use((req,res,next)=>{
 
 const connection = mysql.createConnection(mysql_config);
 
+// INSERIR O TRATAMENTO DOS PARAMS
+app.use(express.json());
+app.use(express.urlencoded({extended:true}))
+
 
 app.use(cors());
 
@@ -73,12 +77,12 @@ app.put('/tasks/:id/status/:status',(req,res)=>{
     connection.query('UPDATE tasks SET status = ? WHERE id = ?',[status,id],(err,rows)=>{
         if(!err){
             if(rows.affectedRows>0){
-                res.json(functions.response('Sucesso','Sucesso na alteração do status',rows.affectedRows,null))
+                res.json(functions.response('Sucesso','Sucesso na alteração do status',rows.affectedRows,null));
             }else{
-                res.json(functions.response('Alerta vermelh','Task não encontrado!',0,null))
+                res.json(functions.response('Alerta vermelh','Task não encontrado!',0,null));
             }
         }else{
-            res.json(functions.response('Erro',err.message,0,null))
+            res.json(functions.response('Erro',err.message,0,null));
         }
     })
 })
@@ -91,14 +95,47 @@ app.delete('/tasks/:id/delete',(req,res)=>{
     connection.query('DELETE FROM tasks WHERE id = ?',[id],(err,rows)=>{
         if(!err){
             if(rows.affectedRows>0){
-                res.json(functions.response('Sucesso','Task deleted', rows.affectedRows,null))
+                res.json(functions.response('Sucesso','Task deleted', rows.affectedRows,null));
             }else{
-                res.json(functions.response('Atenção',' A task não foi encontrada', 0,null))
+                res.json(functions.response('Atenção',' A task não foi encontrada', 0,null));
             }
         }else{
             res.json(functions.response('Erro',err.message,0,null))
         }
     })
+})
+
+// endpoint para inserir uma nova task
+
+app.post('/tasks/create',(req,res)=>{
+    // como o task é um texto e o status também 
+    // através da rota adicionar midleare para isso
+
+    const post_data = req.body;
+    if(post_data==undefined){
+        res.json(functions.response('Atenção', 'Sem dados de uma nova task',0,null))
+        return
+    }
+
+    //checar se dados informados são validos 
+    if(post_data.task==undefined || post_data.status == undefined){
+        res.json(functions.response('Atenção', 'Dados invalidos',0,null))
+        return
+    }
+
+    // pega dos dados da task 
+    const task = post_data.task;
+    const status = post_data.status;
+
+    // inserir a task
+    connection.query('INSERT INTO tasks (task, status, updated_at, created_at) VALUES (?,?, NOW(), NOW())',[task,status],(err,rows)=>{
+        if(!err){
+            res.json(functions.response("Sucesso","Task cadastrada com sucesso", rows.affectedRows, null));
+        }else{
+            res.json(functions.response("Erro",err.message,0, null));
+        }
+    })
+
 })
 
 app.use((req,res)=>{
