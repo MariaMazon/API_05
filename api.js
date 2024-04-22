@@ -1,4 +1,4 @@
-// 17/04 criar dois novos endpoints
+// 22/04 endpoint para atualizar texto de uma task
 
 const express = require('express');
 const mysql = require('mysql2');
@@ -137,6 +137,41 @@ app.post('/tasks/create',(req,res)=>{
     })
 
 })
+
+// criando o endpointe para aatualizar o texto de uma task
+
+// texto da task será enviado atraves do body
+
+app.put('/tasks/:id/update',(req,res)=>{
+    // pegando os dados da requisição
+    const id = req.params.id;
+    const post_data = req.body;
+    const task = post_data.task;
+    const status = post_data.status;
+    
+    // checar se os dados estão vazios
+    if(post_data == undefined){
+        res.json(functions.response('Atenção','Sem dados para atualizar a task',0,null));
+        return;
+    }if(post_data.task == undefined || post_data.status== undefined){
+        res.json(functions.response('Atenção','Dados inválidos',0,null));
+        return;
+    }
+    connection.query('UPDATE tasks SET task =?, status =?, updated_at = NOW() WHERE id =?',[task,status,id],(err,rows)=>{
+        if(!err){
+            if(rows.affectedRows>0){
+                res.json(functions.response('Sucesso','Task atualizada com sucesso!',rows.affectedRows, null));
+            }else{
+                res.json(functions.response('Atenção','Task não encontrada',0,null));
+            }
+        }else{
+            res.json(functions.response('Erro',err.message,0,null));
+        }
+    })
+    
+})
+
+
 
 app.use((req,res)=>{
     res.json(functions.response('Atenção! Rota não encontrada',0,null))
